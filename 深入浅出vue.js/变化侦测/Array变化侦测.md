@@ -10,7 +10,7 @@ this.list.push(1)
 Object的变化是靠setter来追踪的，只要属性发生变化，就会触发setter  
 顺着这个思路，当用push来改变数组的内容，是不是只要在用户使用push操作数组的时候得到通知，就能达到同样的目的   
 然而，在ES6之前，js并没有提供拦截原型方法的能力，尤大就**重写了数组的那些方法，用自定义的方法去覆盖原生的原型方法**  
-<img src="../images/shuzulanjie.png" width="400" height="240">
+<img src="../../images/shuzulanjie.png" width="400" height="240">
 
 如图，我们可以用一个拦截器覆盖Array.prototype, 之后，当**使用Array原型上的方法操作数组时，其实执行的都是拦截器中提供的方法，然后再在拦截器中使用原生的数组原型方法去操作数组**
 ### 拦截器
@@ -60,7 +60,7 @@ export class Observer{
     }
 }
 ````
-<img src="../images/shuzulanjie2.png" width="400" height="280">
+<img src="../../images/shuzulanjie2.png" width="400" height="280">
 
 ### 如何收集依赖
 目前只有一个拦截器，但还是什么事情都做不了，**我们创建拦截器，是为了得到一种能力，一种当数组的内容发生变化时得到通知的能力**  
