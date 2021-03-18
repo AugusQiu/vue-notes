@@ -20,7 +20,7 @@ Object的变化是靠setter来追踪的，只要属性发生变化，就会触�
 ````js
 const arrayProto = Array.prototype
 
-// arrayMethos.__proto__ = Array.prototype 相当于创建了个数组实例
+// arrayMethods.__proto__ = Array.prototype 相当于创建了个数组实例
 export const arrayMethods = Object.create(arrayProto)
 
 ['push','pop','shift','unshift','splice','sort','reverse'].forEach(function(method){
@@ -281,6 +281,13 @@ this.list[0] = 2
 this.list.length = 0
 ````
 上面这两种改变数组的方式，都不会触发re-render或watch
+
+### 小结
+* Array追踪变化的方式和Object不同，因为它是通过数组方法来改变内容，所有我们通过创建拦截器去覆盖数组原型的方式来追踪变化  
+* 为了不污染全局Array.prototype，我们在Observer中只针对那些需要侦测变化的数组使用__proto__来覆盖原型方法
+* Array收集依赖的方式跟Object一样，都是在getter中收集，但是由于使用依赖的位置不同，数组要在拦截器中向依赖发消息，所以不能像Object那样保存在defineReactive中，而是把依赖保存在了Observer实例上  
+* 在Observer中，我们对每个侦测了变化的数据都标上**__ob__**印记，两个作用：1.标记数据是否被侦测了变化（保证同一个数据只被侦测一次）2. 通过数据取到__ob__, 从而拿到Observer实例上保存的依赖，当拦截到数组发生变化，向依赖发生通知
+
 
 
 
