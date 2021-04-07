@@ -109,10 +109,77 @@ export default class Dep{
            window.target.addDep(this) // 新增
         }
     }
+    ......
 }
 ````
+### Watcher 与 Dep的关系
+如果Wacher中的expOrFn参数是一个表达式，那么肯定只收集一个Dep，大部分时候都是这样；但是expOrFn是一个函数，若该函数中使用了多个数据，那么这时Watcher就要收集多个Dep了
+````js
+this.$watch(function(){
+    return this.name + this.age
+},function(newValue, oldValue){
+    console.log(newValue,oldValue)
+})
+````
+上例，我们的表达式是一个函数，并且在函数中访问了name和age两个数据，这种情况下Watcher内部会收集两个Dep：name的Dep和age的Dep，同时这两个Dep中也会收集Watcher, 所以age和name中的任意一个数据发生变化时，Watcher都会收到通知  
+当我们已经在Watcher中记录自己都订阅了哪些Dep之后，就可以在Watcher中新增teardown方法来通知这些订阅的Dep，让它们把自己从依赖列表中移除掉
+````js
+/*
+  从所有依赖项的Dep列表中将自己移除
+*/
+teardown(){
+    let i = this.deps.length
+    while(i--){
+        this.deps[i].removeSub(this)
+    }
+}
 
- 
+export default class Dep{
+    ...
+    removeSub(sub){
+        const index = this.subs.indexOf(sub)
+        if(index > -1){
+            return this.subs.splice(index,1)
+        }
+    }
+    ...
+}
+````
+### deep参数的实现原理
+收集依赖和触发依赖，Watcher想监听某个数据，就会触发某个数据收集依赖的逻辑，将自己收集进去，然后当它发生变化时，就会通知Watcher  
+**deep原理要把当前监听的这个值在内的所有子值都触发一遍依赖收集**
+````js
+export default class Watcher{
+    constructor(vm,expOrFn,cb,options){
+        this.vm = vm
+        // 新增
+        if(options){
+            this.deep = !!options.deep
+        }else{
+            this.deep = false
+        }
+
+        this.deps = []
+        this.depIds = new Set()
+        this.getter = parsePath(expOrFn)
+        this.cb = cb
+        this.value = this.get()
+    }
+
+    get(){
+        window.target = this
+        let value = this.getter.call(vm)
+
+        // 新增
+        if(this.deep){
+            traverse(value)
+        }
+        window.target = undefined
+        return value
+    }
+    ......
+}
+````
 
 
 
