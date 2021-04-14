@@ -180,8 +180,70 @@ export default class Watcher{
     ......
 }
 ````
+>注意：一定要在window.target = undefined 之前去触发子值的收集依赖逻辑，这样才能保证子集收集的依赖是当前这个Watcher
 
+````js
+// 递归value的所有子值来触发它们收集依赖的功能
+const  seenObjects = new Set()
+export function traverse(val){
+   _traverse(val,seenObjects)
+   seenObjects.clear()
+}
 
+function _traverse(val,seen){
+    let i, keys
+    const isA = Array.isArray(val)
+    if((!isA && !isObject(val)) || Object.isFrozen(val)){
+        return
+    }
 
+    if(val.__ob__){
+        const depId = val.__ob__.dep.id
+        if(seen.has(depId)){
+            return
+        }
+        seen.add(depId)
+    }
+
+    if(isA){
+        i = val.length
+        while(i--) _traverse(val[i],seen)
+    }else{
+        keys = Object.keys(val)
+        i = keys.length
+        while(i--) _traverse(val[keys[i]],seen)
+    }
+}
+````
+## vm.$set
+用法：在object上设置一个属性，如果object是响应式的，vue.js会保证属性被创建后也是响应式的，并且触发视图更新，**这个方法主要是用来避开Vue.js不能侦测属性被添加的限制（只有已经存在的属性变化会被追踪到，新增的属性无法被追踪到），在ES6之前，js并没有提供元编程的能力，所以无法侦测object什么时候被添加了一个新属性**  
+````js
+// 使用vm.$set就可以为object新增属性，然后Vue.js就可以将这个新增属性转换成响应式的
+var vm = new Vue({
+    el: '#el',
+    template: '#demo-template',
+    data:{
+        obj:{}
+    },
+    methods:{
+        action(){
+            this.obj.name = 'qgq'
+        }
+    }
+})
+// 当action方法被调用时，会为obj新增一个name属性，vue.js并不会得到任何通知，新增的这个属性也不是响应式的，vue.js根本不知道这个obj新增了属性，就像Vue.js无法知道我们使用array.length = 0 清空了数组一样
+````
+### Array的处理
+````js
+export function set(target,key,val){
+    if(Array.isArray(target) && isValidArrayIndex(key)){
+        target.length = Math.max(target.length,key)
+        target.splice(key,1,val)
+        return val
+    }
+}
+
+// 通过splice方法把val设置到target中的指定位置，触发数组拦截器，从而自动帮我们把这个新增的val转换成响应式的
+````
 
 
