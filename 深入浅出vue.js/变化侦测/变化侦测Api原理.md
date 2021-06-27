@@ -238,12 +238,39 @@ var vm = new Vue({
 export function set(target,key,val){
     if(Array.isArray(target) && isValidArrayIndex(key)){
         target.length = Math.max(target.length,key)
-        target.splice(key,1,val)
+        // 通过splice方法把val设置到target中的指定位置，触发数组拦截器，从而自动帮我们把这个新增的val转换成响应式的
+        target.splice(key,1,val)  // 这里用splice方法先删后减，做的就是替换元素的工作
         return val
     }
-}
 
-// 通过splice方法把val设置到target中的指定位置，触发数组拦截器，从而自动帮我们把这个新增的val转换成响应式的
+    // 处理参数中的key已经存在于target中的情况
+    if(key in target && !(key in Object.prototype)){
+        target[key] = val
+        return val
+        // 由于key已经存在于target中，所以这个key已经被侦测了变化，直接用key和val改数据就行
+    }
+
+    // 处理新增的属性
+    const ob = target.__ob__
+    if(target._isVue || (ob && ob.vmCount)){
+        process.env.NODE_ENV !== 'production' && warn(
+            'Avoid adding reactive properties to a Vue instance or its root $data'
+        )
+        return val
+    }
+
+    // target身上没有__ob__属性，说明它不是响应式，不需要做什么特殊处理，只需要通过key和val在target上设置就行
+    if(!ob){
+        target[key] = val
+        return val
+    }
+
+    // 再调一遍defineReactive将新增属性转换成getter/setter的形式
+    defineReactive(ob.value,key,val)
+    // 向target的依赖触发变化通知
+    ob.dep.notify()
+    return val
+}
 ````
 
 
