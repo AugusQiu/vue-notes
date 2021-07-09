@@ -99,7 +99,7 @@ function removeNode(el){
 
 处理最后一个节点，首先会执行跳过undefined的逻辑，然后再开始快捷比对，匹配到的是新start节点和旧start节点，它们各自start后移一位，这个时候就会跳出循环了  
 
-最后收尾工作
+最后收尾工作  
 <img src="https://user-gold-cdn.xitu.io/2019/8/22/16cb51516fb53987?imageslim" width="400" height="300">
 
 >在更新子节点时，需要在oldChildren中循环去找一个节点，但是如果在模板中渲染列表时，为子节点设置了属性key，那么会建立key与index索引的对应关系，就是一个key对应着一个节点下标这样一个对象，就可以直接通过key拿到下表，这样我们就不需要通过循环来查找节点
