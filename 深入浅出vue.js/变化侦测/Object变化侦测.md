@@ -136,6 +136,7 @@ export default class Watcher{
   所以，不管是用户执行 vm.$watch('a.b.c', (value,oldValue)=>{}), 还是模板中 用到的data, 都是通过 Watcher 来通知自己是否需要变化
 */
 ````
+> 大致回顾整个流程：从调用Dep实例的notify方法，notify方法中会循环一个subs的数组，数组里存的就是Watcher，watcher是data对象的属性被访问时，会给每一个属性维护一个Watcher实例，从数组中遍历然后执行单个watcher的update方法，update方法中会维护一个异步更新队列。Watcher的update方法其实就是去触发getter，所以也就会重新渲染，重新执行一遍生成vnode，转化为真实DOM的过程
 ### 递归侦测所以key
 上述示例只能侦测数据中的某一个属性，期望把数据中的**所有属性（包括子属性）** 都侦测到，因此要封装一个**Observer类，这个类的作用就是将一个数据内的所有属性（包括子属性）都转换成getter/setter 的形式**
 ````js
