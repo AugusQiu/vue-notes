@@ -23,8 +23,10 @@ const arrayProto = Array.prototype
 // arrayMethods.__proto__ = Array.prototype 相当于创建了个数组实例
 export const arrayMethods = Object.create(arrayProto)
 
+// 修改arrayMethods 中的数组方法，arrayProto不受影响，函数独立作用域 分割
 ['push','pop','shift','unshift','splice','sort','reverse'].forEach(function(method){
     const original = arrayProto[method] // 缓存原始方法
+    // js中，函数是一等公民，彼此独立，赋值给另一个变量，两不相干
     Object.defineProperty(arrayMethods,method,{
        value: function mutator(...args){
           return original.apply(this,args)
@@ -43,6 +45,18 @@ export const arrayMethods = Object.create(arrayProto)
   最后，在mutator中执行original(它是原生Array.prototype上的方法，比如Array.prototype.push)来做它该做的(push功能)
   当然，我们可以再对这个mutator函数中做一些其他的事，比如说发送变化通知
 */
+````
+````js
+// 关于Object.create
+let o1 = { name:'qgq', attr:{ age:23 }}
+let o2 = Object.create(o1)
+o2.name = 'xyz'
+console.log(o2.name) // 'xyz'
+console.log(o1.name) // 'qgq'
+
+o2.attr.age = 100
+console.log(o2.attr.age) // 100
+console.log(o1.attr.age) // 100
 ````
 ## 使用拦截器覆盖Array原型
 有了拦截器，想要让它生效，就需要使用它去覆盖Array.prototype，但是我们又不能直接覆盖，因为这样会污染全局的Array  
