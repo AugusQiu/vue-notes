@@ -166,5 +166,177 @@ Vue.prototype.$forceUpdate = function(){
 }
 ````
 vm._watcher就是Vue.js实例的watcher, 每当组件内依赖的数据发生变化时，都会自动触发实例中_watcher的update方法  
+### vm.$destroy
+完全销毁一个实例，它会清理该实例与其他实例的连接，并解绑其全部指令及监听器，同时触发beforeDestroy和destroyed的钩子函数  
+````js
+Vue.prototype.$destroy = function(){
+    const vm = this
+    // 防止反复执行，为true说明正在被销毁
+    if (vm._isBeingDestroyed){
+        return
+    }
+    callHook(vm,'beforeDestroy')
+    vm._isBeingDestroyed = true
 
+    // 删除自己与父级之间的连接
+    /*
+      一个组件可以被多个组件引入，为什么代码只从一个父组件的$children列表中移除了子组件？
+      子组件在不同父组件中是不同的Vue.js实例，所以一个子组件实例（注意是实例）的父级只有一个
+    */
+    const parent = vm.$parent
+    if (parent && !parent._isBeingDestroyed && !vm.$options.abstract){
+        remove(parent.$children,vm)
+    }
+    
+    // 从watcher监听的所有状态的依赖列表中移除watcher
+    // _watcher是vue实例自动创建的，组件粒度，监听这个组件中用到的所有状态
+    if (vm._watcher){
+        vm._watcher.teardown()
+    }
+    // _watchers是保存用户所创建的watcher实例
+    let i = vm._watchers.length
+    while(i--){
+      vm._watchers[i].teardown()
+    }
+    vm._isDestroyed = true
+    
+    // 在vnode树上触发destroyed钩子函数解绑指令
+    vm.__patch__(vm._vnode,null)
+    callHook(vm,'destroyed')
+    // 移除所有的事件监听器
+    vm.$off()
+}
+````
+### vm.$nextTick
+nextTick接收一个回调函数作为参数，它的作用是将回调延迟到下次DOM更新周期后执行  
+使用场景：当更新了状态（数据）后，需要对新DOM做一些操作，但是这时我们还获取不到更新后的DOM，因为还没有重新渲染
+````js
+new Vue({
+    //...
+    methods:{
+        //...
+        update:function(){
+            this.message = 'changed' // 修改数据
+            this.$nextTick(function(){
+                // DOM现在更新了
+                ...
+            })
+        }
+    }
+})
+````
+**下次DOM更新周期之后执行，具体是什么时候？**  
+在Vue.js中，当状态改变时，watcher会得到通知，然后触发虚拟dom的渲染流程，而watcher触发渲染这个操作是异步的，Vue.js中有一个队列，每当需要渲染时，会将watcher推送到这个队列中，在下一次事件循环时，才触发渲染  
+**为什么要用异步更新队列？**
+组件内所有状态的变化都会通知到同一个watcher，然后虚拟DOM会对整个组件进行diff操作。也就是说如果同一轮事件循环中 有两个数据发生了变化，那么组件的watcher会收到两份通知，从而触发两次渲染。事实上，并不需要渲染两次，粒度已经是组件级别了，虚拟DOM会对整个组件进行渲染，所以只需要等到所有状态都修改完毕后，一次性渲染最新的就是  
+所以，实现方式就是：先将收到通知的watcher实例，添加到队列中缓存起来，并且在添加到队列之前检查其中是否已经存在相同的watcher，不存在才会添加。然后在下一次事件循环（event loop)中，Vue.js会让队列中的watcher触发流程并清空队列  
+**什么是执行栈**  
+当我们执行一个方法时，js会生成一个与该方法对应的执行环境（context)，又叫执行上下文。这个执行环境中有这个方法的私有作用域（私有作用域中定义的变量、this对象）、上层作用域的指向、参数（arguments)，这个执行环境会被添加到一个栈中，这个栈就是执行栈  
+如果在这个方法的代码中，执行到了一行函数调用语句，那么js会生成这个函数的执行环境并将其添加到执行栈中，进入到这个执行栈执行代码，执行完毕从栈中销毁这个新压入的执行环境，再回到上一个方法的执行环境，这个过程反复进行，知道所有代码全部执行完毕  
 
+**下次DOM更新周期** 就是下次微任务执行时更新DOM，vm.$nextTick其实也就是把回调添加到微任务中（只有在特殊情况下才会降级成宏任务）  
+````js
+// 如果是先使用vm.$nextTick注册回调，然后修改数据，则在微任务队列中因为先后顺序，就无法得到最新的DOM
+new Vue({
+    //...
+    methods:{
+        //...
+        update:function(){
+            // 先使用nextTick注册回调
+            this.$nextTick(()=>{
+                // DOM没有更新
+            },0)
+            // 然后修改数据，更新dom
+            this.message = 'changed'
+        }
+    }
+})
+
+new Vue({
+    //...
+    methods:{
+        //...
+        update:function(){
+            // 先使用setTimeout向宏任务中注册回调
+            // 即使先注册了宏任务，但是因为微任务先执行，所以这里也能获取到更新后的DOM
+            setTimeout(()=>{
+                // DOM现在更新了
+            },0)
+            // 修改数据向微任务队列中注册回调
+            this.message = 'changed'
+        }
+    }
+})
+````
+vm.$nextTick和全局方法Vue.nextTick是相同的，所以nextTick的具体实现并不是在Vue原型上的$nextTick方法中，而是抽象成了nextTick方法给大家共用  
+````js
+import { nextTick } from '../util/index'
+Vue.prototype.$nextTick = function(fn){
+    return nextTick(fn,this)
+}
+````
+````js
+// 实现原理
+const callbacks = []
+// 标记是否已经向任务队列中添加了一个任务，每当向任务队列中 插入任务时，设为true, 每当任务被执行时，设为false
+let pending = false 
+
+function flushCallbacks(){
+    pending = false
+    const copies = callbacks.slice(0)
+    callbacks.length = 0 // 清空原数组
+    for(let i = 0; i < copies.length; i++){
+        copies[i]()
+    }
+}
+
+let microTimeFunc
+const p = Promise.resolve()
+microTimerFunc = () =>{
+    p.then(flushCallbacks)
+}
+
+let useMacroTask = false
+export function withMacroTask(fn){
+    return fn._withTask || (fn._withTask = function(){
+        useMacroTask = true
+        const  res = fn.apply(null,arguments)
+        useMacroTask = false
+        return res
+    })
+}
+
+export function nextTick(cb,ctx){
+    callbacks.push(()=>{
+        if(cb){
+            cb.call(ctx)
+        }
+    })
+
+    if(!pending){
+        pending = true
+        if (useMacroTask) {
+            macroTimerFunc()
+        } else {
+            microTimerFunc()
+        }
+    }
+}
+````
+### vm.$mount
+这个方法不常用，如果在实例化Vue.js时设置了el选项，就会自动把Vue实例挂载到DOM元素上。无论没有设置el选项，那么它处于“未挂载”状态，没有关联的DOM元素，就可以使用vm.$mount手动挂载一个未挂载的实例  
+````js
+var MyComponent = Vue.extend({
+    template: '<div>hello!!!</div>'
+})
+
+// 创建并挂载到#app(会替换#app)
+new MyComponent({ el:'#app' })
+
+// 创建并挂载到#app(会替换#app)
+new MyComponent().$mount('#app')
+
+// 或者，在文档之外渲染并且随后挂载
+var component = new MyComponent().$mount()
+document.getElementById('app').appendChild(component.$el)
+````
