@@ -114,8 +114,9 @@ export default class Watcher{
 
     get(){
         window.target = this
-        // getter参数里面记录了一个非常重要的东西，vm.update(vm.render())
-        // 通知render watcher去更新视图时，就是触发render函数、生成vnode树、diff
+        // getter参数里面记录了一个非常重要的东西，vm._update(vm._render())
+        // vm._update的作用就是调用虚拟DOM中的patch方法来执行节点的比对和渲染操作，_render的作用就是执行渲染函数，得到一份最新的VNode节点树
+        // 通知render watcher去更新视图时，就是触发render函数、生成vnode树、diff、patch
         let value = this.getter.call(this.vm, this.value)
         window.target = undefined
         return value
@@ -129,10 +130,10 @@ export default class Watcher{
 }
 
 /*
-  该代码可以主动把 当前的watch实例 主动添加到 data.a.b.c 的Dep中去
+  该代码可以主动把 当前的watch实例 主动添加到 data.a.b.c 的Dep中去，只要先在window.target赋一个this, 然后再读一下值去触发getter, 就可以主动把this添加到keypath的Dep中
   1. 在get方法中，先把window.target设置成了this(当前watch实例)，再读一遍data.a.b.c的值，这肯定会触发getter(Object.defineProperty)
-  2. 触发了getter,就会触发收集依赖的逻辑，也就是会从window.target中读取依赖并读取到Dep中
-  所以，只要先在window.target赋一个this, 然后再读一下值，去触发getter, 就可以主动把this添加到keypath的Dep中
+  2. 触发了getter,就会触发收集依赖的逻辑，也就是会从window.target中读取依赖并读取到Dep中(watcher在读取数据前，是设置在全局window.target中的，数据被读取触发getter，也就是会把watcher收集到依赖列表中，数据发生变化，就会向watcher发送通知)
+  
 
   依赖注入到Dep中后，每当data.a.b.c的值发生变化，就会让依赖列表中所有的依赖循环触发update方法，即Watcher中的update方法，而update方法会执行参数中的回调函数，将value和oldValue传到参数中
   所以，不管是用户执行 vm.$watch('a.b.c', (value,oldValue)=>{}), 还是模板中 用到的data, 都是通过 Watcher 来通知自己是否需要变化
