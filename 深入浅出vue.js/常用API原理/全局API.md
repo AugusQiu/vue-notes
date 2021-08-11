@@ -1,3 +1,4 @@
+**全局API和实例方法不同，后者是在Vue的原型上挂载方法，也就是在Vue.prototype上挂载方法，而前者是直接在Vue上挂载方法, 全局方法可以类别为类的静态方法，只能被类调用，类的实例对象不能调用**
 ### Vue.extend(options)
 使用基础Vue构造器创建一个“子类”
 ````js
@@ -18,7 +19,6 @@ var Profile = Vue.extend({
 // 创建Profile实例，并挂载到一个元素上
 new Profile().$mount('#mount-point')
 ````
-全局API和实例方法不同，后者是在Vue的原型上挂载方法，也就是在Vue.prototype上挂载方法，而前者是直接在Vue上挂载方法
 ````js
 Vue.extend = function(extendOptions){
     ......
@@ -182,8 +182,70 @@ Vue.use = function(plugin){
     installedPlugins.push(plugin)
     return this
 }
-````  
+````
+### Vue.mixin
+局部或全局注册一个混入（mixin)，影响注册之后创建的每个Vue.js实例   
+本质上就是一个js对象，它可以包含组件中的任意功能选项，data、components、methods、created、computed等等
+````js
+// 全局混入，为自定义的选项myOption注入一个处理器
+Vue.mixin({
+    created:function(){
+        var myOption = this.$options.myOption
+        if (myOption) {
+            console.log(myOption)
+        }
+    }
+})
 
+new Vue({
+    myOption:'hello!'
+})
+// => "hello!"
+````
+````js
+// 组件中局部混入
+var myMixin = {
+    created:function(){
+        this.hello()
+    },
+    methods:{
+        hello:function(){
+            console.log('hello qgq')
+        }
+    }
+}
+Vue.component('componentA',{
+    mixins:[myMixin]
+})
+````
+````js
+// 使用场景 利用mixin功能将相同或者相似的代码提出来
+// 比如封装一个modal弹窗组件、一个tooltip提示框，它们内部都会通过isShowing来控制显示
+const toggle = {
+    data(){
+        return{
+            isShowing:false
+        }
+    },
+    methods:{
+        toggleShow(){
+            this.isShowing = !this.isShowing
+        }
+    }
+}
+const Modal = {
+    template: '#modal'
+    mixins: [toggle]
+}
 
+const Tooltip = {
+    template: '#tooltip',
+    mixins: [toggle]
+}
+````
+原理就是 利用mergeOptions方法将Vue实例自身的options和传入的合并mixin对象合并  
+像props、computed、methods这些选项是直接是直接替换，data而是合并  
+> mixin与extend的区别？extend是扩展出的一个子类，A extends B, 则 A is a B;
+mixin组合，A只是想用B的能力，而不需要成为其子类，所以mixin更加灵活
 
 
