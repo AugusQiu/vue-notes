@@ -249,3 +249,17 @@ const Tooltip = {
 mixin组合，A只是想用B的能力，而不需要成为其子类，所以mixin更加灵活
 
 
+
+### Vue.compile
+````js
+// 编译模板字符串并返回包含渲染函数的对象，与vm.$mount类似，只存在于包含编译器的完整版之中
+var res = Vue.compile('<div><span>{{ msg }}</span></div>')  
+new Vue({
+    data:{
+        msg: 'hello'
+    },
+    render: res.render
+})
+
+// 实现原理就是调用编译器里的方法 compileToFunctions
+````
