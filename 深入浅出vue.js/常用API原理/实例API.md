@@ -340,3 +340,4 @@ new MyComponent().$mount('#app')
 var component = new MyComponent().$mount()
 document.getElementById('app').appendChild(component.$el)
 ````
+[render、template、el选项的区别与联系](https://www.cnblogs.com/vickylinj/p/14409360.html)
