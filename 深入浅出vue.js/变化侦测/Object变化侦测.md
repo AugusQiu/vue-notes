@@ -22,6 +22,53 @@ function defineReactive(data,key,val){
   })
 }
 ````
+### Object.defineProperty vs Proxy
+两个都是用来做数据劫持的，数据劫持：在访问或者修改对象的某个属性时，通过一段代码拦截这个行为，可以再进行额外的操作或者直接返回结果，vue的双向数据绑定就是数据劫持的典型应用  
+````js
+/*
+target: 要被包装的目标对象，可以是任何类型的对象，包括原生数组、函数、甚至可以是另一个代理  
+对象：就是针对整个对象，而不是某个属性，就省去了像Object.defineProperty那样用Object.keys()循环遍历的步骤  
+数组：不需要再重写7大方法，省去了众多hack
+嵌套：get里面递归调用Proxy并返回
+handler: 一个对象，当执行一个操作时定义代理的行为函数
+*/
+let obj = {
+    name:'qgq',
+    age:23,
+}
+let handler = {
+    get(target,key,receiver){
+       console.log('get',key)
+       // 递归，支持嵌套
+       if(typeof taeget[key] === 'object' && target[key] !== null){
+           return Reflect.get(target,key,receiver)
+       }
+       return Reflect.get(target,key,receiver)
+    },
+    set(target,key,value,receiver){
+       console.log('set',key,value)
+       return Reflect.set(target,key,value,receiver)
+    }
+}
+let p = new Proxy(obj,handler)
+proxy.name = 'augus' // set name augus
+proxy.age  =  30     // set age 30
+
+// Reflect是一个内置对象，区别于Object，Reflect是不可构造的（不能new)，它的方法和属性都是静态的
+let array = [1,2,3,4]
+array.forEach((val,index)=>{
+  Object.defineProperty(array,index,{
+    get:function(){
+        console.log('读取了')
+        return val
+    },
+    set:function(newVal){
+       val = newVal
+    }
+  })
+})
+console.log(array[0])
+````
 ### 如何收集依赖？
 ````html
 <template>
