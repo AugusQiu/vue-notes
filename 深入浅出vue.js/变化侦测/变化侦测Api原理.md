@@ -112,6 +112,9 @@ export default class Dep{
     ......
 }
 ````
+* dep是一个依赖，某一个响应式数据可能被多个地方用到，那就是多个依赖，deps数组管理
+* dep里有addSub、removeSub，sub就是不同的watcher，dep.notify就会触发watcher的update方法，depend方法会触发watcher的addDep方法
+* 在watcher里维护deps来记录依赖，dep.depend -> watcher.addDep -> dep.addSub
 ### Watcher 与 Dep的关系
 如果Wacher中的expOrFn参数是一个表达式，那么肯定只收集一个Dep，大部分时候都是这样；但是expOrFn是一个函数，若该函数中使用了多个数据，那么这时Watcher就要收集多个Dep了
 ````js
