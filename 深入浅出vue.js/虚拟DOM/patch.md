@@ -65,9 +65,9 @@ function removeNode(el){
 * 新创建的虚拟节点有children属性，旧虚拟节点也有children属性，那么我们要对新旧两个虚拟节点的children进行一个更加详细的对比并更新；旧虚拟节点没有children属性，那说明旧虚拟节点是一个空标签，要么是有文本的文本标签（所以元素节点往往可以包含文本节点），包含文本节点，就先清空文本再插入  
 * 新创建的虚拟节点没有children属性，当新创建的虚拟节点既没有text属性也没有children属性，那么这就是个空节点，它下面没有文本内容也没有子节点，那oldVnode有什么就删什么，最后达到视图中是空标签的目的
 
-<img src="https://user-gold-cdn.xitu.io/2019/8/21/16cb48188c5ed824?imageslim" width="320" height="400">
+<img src="https://pic1.zhimg.com/80/v2-f9d6f677e54a61da09aa8d1ceba1f4bc_1440w.jpg" width="320" height="400">
 
-### 更新节点的优化策略
+### [更新节点的优化策略](https://zhuanlan.zhihu.com/p/99015402)
 新旧vnode树 diff更新时，有些节点只是位置需要移动，vue给出了高效的节点更新方案  
 优化策略总结为三步：
 * 1. 跳过undefined节点。移动节点时，真正移动的是真实DOM节点，新旧vnode树
@@ -75,32 +75,32 @@ function removeNode(el){
 * 2. 快捷查找 四种比对方式
 * 3. key值查找
 
-<img src="https://user-gold-cdn.xitu.io/2019/8/22/16cb4f706d65e80c?imageslim" width="400" height="300">
+<img src="https://pic3.zhimg.com/80/v2-3c18762eb69bd3996b2d33b29ffd0646_1440w.jpg" width="400" height="300">
   
 初始化状态如上
 
-<img src="https://user-gold-cdn.xitu.io/2019/8/22/16cb4f897d9a8ed9?imageslim" width="400" height="300">
+<img src="https://pic3.zhimg.com/80/v2-9252a9c37c7c4192fb676bb4113e6e6e_1440w.jpg" width="400" height="300">
 
 首先进行的是两两四次的快捷比对，四次比对都没找到，再通过旧节点的key值列表，也没有找到，说明E是新增的节点，创建对应的真实dom节点，插入到旧节点里start对应真实dom的前面，也就是A的前面，已经处理完了一个，新start位置后移一位
 
-<img src="https://user-gold-cdn.xitu.io/2019/8/22/16cb9a8c163e2821?imageslim" width="400" height="300">
+<img src="https://pic4.zhimg.com/80/v2-2abe2f515a5c09cedee8ea59daf097db_1440w.jpg" width="400" height="300">
 
 接着开始处理第二个，还是首先进行快捷查找，没有后进行key值列表查找，发现是已有的节点，只是位置不对，那么进行插入操作，参考节点还是A节点，将原来旧节点C设置为undefined， 之后就会跳过它，又处理完了一个节点，新start后移一位
 
-<img src="https://user-gold-cdn.xitu.io/2019/8/22/16cb9a9246bd8470?imageslim" width="400" height="300">
+<img src="https://pic2.zhimg.com/80/v2-e270d02def5c091c545ffc483c14bbb1_1440w.jpg" width="400" height="300">
 
 再处理第三个节点，通过快捷查找找到了，是新start节点对应旧start节点，dom位置是对的，新start和旧start都后移一位
 
-<img src="https://user-gold-cdn.xitu.io/2019/8/22/16cb9a98bdac55bc?imageslim" width="400" height="300"> 
+<img src="https://pic3.zhimg.com/80/v2-b6cc8bcfe1e25096676959efa9c0dd92_1440w.jpg" width="400" height="300"> 
 
 接着处理的第四个节点，通过快捷查找，这个时候先满足了旧start节点和新end节点的匹配，但是dom位置是不对的， 插入节点到最后位置，最后将新end前移一位，旧start后移一位  
 
-<img src="https://user-gold-cdn.xitu.io/2019/8/22/16cb9abd6092aec2?imageslim" width="400" height="300"> 
+<img src="https://pic3.zhimg.com/80/v2-c7401096a5f8948b187ab62846564942_1440w.jpg" width="400" height="300"> 
 
 处理最后一个节点，首先会执行跳过undefined的逻辑，然后再开始快捷比对，匹配到的是新start节点和旧start节点，它们各自start后移一位，这个时候就会跳出循环了  
 
 最后收尾工作  
-<img src="https://user-gold-cdn.xitu.io/2019/8/22/16cb51516fb53987?imageslim" width="400" height="300">
+<img src="https://pic2.zhimg.com/80/v2-a2df50dd8ba117791f375aaf4897fbfd_1440w.jpg" width="400" height="300">
 
 >在更新子节点时，需要在oldChildren中循环去找一个节点，但是如果在模板中渲染列表时，为子节点设置了属性key，那么会建立key与index索引的对应关系，就是一个key对应着一个节点下标这样一个对象，就可以直接通过key拿到下表，这样我们就不需要通过循环来查找节点
 
