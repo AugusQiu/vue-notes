@@ -86,13 +86,13 @@ class Dep{
 }
 ````
 * 7. sum get求值结束，接下来执行popTarget，Dep.target又变更为render watcher，最后return value为2，
-* 8. 但是此时sum属性的get访问是还没结束的
+* 8. 但是此时sum属性的get访问是还没结束的，因为还要把计算属性sum转化为响应式数据
 ````js
 Object.defineProperty(vm, 'sum', { 
     get() {
           // 此时函数执行到了这里, Dep.target是render watcher
           if (Dep.target) {
-            watcher.depend()
+            watcher.depend() 
           }
           return watcher.value
         }
@@ -100,7 +100,7 @@ Object.defineProperty(vm, 'sum', {
 })
 
 
-// watcher.depend
+// watcher.depend 注意这里是watcher里的depend方法，dep.depend -> watcher.addDep -> dep.addSub
 depend () {
   let i = this.deps.length
   while (i--) {

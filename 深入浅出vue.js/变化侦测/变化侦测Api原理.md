@@ -115,7 +115,7 @@ export default class Dep{
 * dep是一个依赖，某一个响应式数据可能被多个地方用到，那就是多个依赖，deps数组管理
 * dep里有addSub、removeSub，sub就是不同的watcher，dep.notify就会触发watcher的update方法，depend方法会触发watcher的addDep方法
 * 在watcher里维护deps来记录依赖，dep.depend -> watcher.addDep -> dep.addSub
-### Watcher 与 Dep的关系
+### Watcher 与 Dep的关系
 如果Wacher中的expOrFn参数是一个表达式，那么肯定只收集一个Dep，大部分时候都是这样；但是expOrFn是一个函数，若该函数中使用了多个数据，那么这时Watcher就要收集多个Dep了
 ````js
 this.$watch(function(){
@@ -247,7 +247,7 @@ export function set(target,key,val){
     }
 
     // 处理参数中的key已经存在于target中的情况
-    if(key in target && !(key in Object.prototype)){
+    if(key in target && !(key in Object.prototype)){
         target[key] = val
         return val
         // 由于key已经存在于target中，所以这个key已经被侦测了变化，直接用key和val改数据就行
@@ -255,9 +255,9 @@ export function set(target,key,val){
 
     // 处理新增的属性
     const ob = target.__ob__
-    if(target._isVue || (ob && ob.vmCount)){
-        process.env.NODE_ENV !== 'production' && warn(
-            'Avoid adding reactive properties to a Vue instance or its root $data'
+    if(target._isVue || (ob && ob.vmCount)){
+        process.env.NODE_ENV !== 'production' && warn(
+            'Avoid adding reactive properties to a Vue instance or its root $data'
         )
         return val
     }
@@ -268,8 +268,8 @@ export function set(target,key,val){
         return val
     }
 
-    // 再调一遍defineReactive将新增属性转换成getter/setter的形式
-    defineReactive(ob.value,key,val)
+    // 再调一遍defineReactive将新增属性转换成getter/setter的形式
+    defineReactive(ob.value,key,val)
     // 向target的依赖触发变化通知
     ob.dep.notify()
     return val
