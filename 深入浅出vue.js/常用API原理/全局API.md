@@ -244,12 +244,11 @@ const Tooltip = {
 }
 ````
 原理就是 利用mergeOptions方法将Vue实例自身的options和传入的合并mixin对象合并  
-像props、computed、methods这些选项是直接是直接替换，data而是合并  
+* 像methods这种对象选项，mixin和被混入组件有重复定义方法的话，以被混入组件为准
+* 像created这种函数选项，会被合并，并集，mixin的在被混入组件前调用  
+[vue中mixins的使用方法和注意点](https://www.cnblogs.com/Ivy-s/p/9937173.html)
 > mixin与extend的区别？extend是扩展出的一个子类，A extends B, 则 A is a B;
 mixin组合，A只是想用B的能力，而不需要成为其子类，所以mixin更加灵活
-
-
-
 ### Vue.compile
 ````js
 // 编译模板字符串并返回包含渲染函数的对象，与vm.$mount类似，只存在于包含编译器的完整版之中
