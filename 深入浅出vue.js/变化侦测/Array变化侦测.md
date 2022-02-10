@@ -227,6 +227,7 @@ export class Observer{
 
         // 新增
         if(Array.isArray(value)){
+            value.__proto__ = arrayMethods
             this.observeArray(value)
         }else{
             this.walk(value)
